@@ -64,6 +64,6 @@ The key file must contain 8 characters. Each character represents one 8-bit key.
 
 ## Compilation and Execution
 
-### Build
-```bash
-gcc main.c -o sdes
+### Testing: 
+Encrypt: python sdes.py encrypt plaintext.txt ciphertext.bin keys.txt
+Decrypt: python sdes.py decrypt ciphertext.bin restored.txt keys.txt

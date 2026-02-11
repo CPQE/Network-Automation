@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
-TARGET = sdes
+TARGET = main.exe
 OBJ = main.o fileIO.o cryptoFuncs.o
 
 all: $(TARGET)
@@ -17,5 +17,11 @@ fileIO.o: fileIO.c fileIO.h cryptoFuncs.h
 cryptoFuncs.o: cryptoFuncs.c cryptoFuncs.h
 	$(CC) $(CFLAGS) -c cryptoFuncs.c
 
+# Test command: encrypts test.txt and then decrypts the result
+run: $(TARGET)
+	./$(TARGET) encrypt test.txt encrypted.bin keys.txt
+	./$(TARGET) decrypt encrypted.bin decrypted.txt keys.txt
+	@echo Done. Compare test.txt and decrypted.txt
+
 clean:
-	rm -f *.o $(TARGET)
+	del /Q /F *.o *.exe 

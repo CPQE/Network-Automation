@@ -1,31 +1,27 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "fileIO.h"
-#include "cryptoFuncs.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 5) {
-        printf("Usage: %s <encrypt|decrypt> <input_file> <output_file> <key_file>\n", argv[0]);
+        printf("Usage: sdes <encrypt|decrypt> <input> <output> <keyfile>\n");
         return 1;
     }
 
-    // Read keys from file (1 key = 1 character)
     uint8_t keys[8];
-    FILE *key_file = fopen(argv[4], "r");
-    if (!key_file) {
-        perror("Key file error");
+    FILE *kf = fopen(argv[4], "rb");
+    if (!kf) { perror("Keyfile error"); return 1; }
+    
+    // Read exactly 8 characters as keys
+    if (fread(keys, 1, 8, kf) < 8) {
+        fprintf(stderr, "Error: Keyfile must be at least 8 bytes.\n");
         return 1;
     }
-    
-    for (int i = 0; i < 8; i++) {
-        int ch = fgetc(key_file);
-        if (ch == EOF) {
-            fprintf(stderr, "Error: Key file must contain at least 8 characters.\n");
-            return 1;
-        }
-        keys[i] = (uint8_t)ch;
-    }
-    fclose(key_file);
+    fclose(kf);
 
-    process_files(argv[1], argv[2], argv[3], keys);
+    int mode = (strcmp(argv[1], "encrypt") == 0) ? 1 : 0;
+    process_file(argv[2], argv[3], keys, mode);
 
     return 0;
 }
