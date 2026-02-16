@@ -1,7 +1,5 @@
 import os
 
-import os
-
 def read_raw_string(filename):
     try:
         with open(filename, 'r') as f:
@@ -21,6 +19,7 @@ def write_raw_string(filename, data):
             f.write(data)
     except PermissionError:
         print(f"CRITICAL ERROR: Permission denied writing to {filename}.")
+        
 def write_raw_string(filename, data):
     with open(filename, 'w') as f:
         f.write(data)

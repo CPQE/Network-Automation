@@ -12,7 +12,6 @@ def validate_and_format(raw_input):
         # Handle odd/even bytes requirement
         if len(data_bytes) % 2 != 0:
             data_bytes += b'\x00'
-            
         blocks = []
         for i in range(0, len(data_bytes), 2):
             blocks.append((data_bytes[i] << 8) | data_bytes[i+1])
