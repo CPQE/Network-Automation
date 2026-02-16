@@ -1,0 +1,279 @@
+ Create a UDP Datagram Sender & Receiver
+
+ 
+
+1. Objective
+
+This assignment is meant to refresh your programming skills prior to other assignments dealing with network programming.  You will write a program  to create a UDP datagram for sending a record. After that, you will develop the corresponding receiver module for UDP datagrams. This module checks whether a received datagram is error free. In an actual transport layer implementation, it will write the received data to a memory buffer and signal to the upper layer the availability of the datagram. In case of an error, the datagram is dropped.
+
+Data (Encrypt using Assignment 1)
+
+Sender module  (Current Assignment)
+
+Sender calculates the UDP checksum, and places it in the Checksum field. The UDP datagram sent by the sender does not include the pseudo-header used for the checksum calculation.
+
+Receiver module  (Current Assignment):
+
+Recieved data (Decrypt using Assignment 1)
+
+When a UDP datagram arrives at the receiver side, receiver performs an error check. It forms the pseudo-header, prepends it to the actual UDP datagram, and then performs the checksum. A mismatch indicates an error has occurred and the segment is discarded.
+
+2. Description
+
+UDP is an unreliable, connectionless transport layer protocol. To send a message  the UDP  protocol entity on the sender side creates a UDP datagram and hands it down to the IP layer for delivery. UDP datagram is formed by encapsulating data with the UDP header, which includes a checksum.   At the receiver end, the transport layer uses the checksum to detect errors in the datagram. If it is error-free, the header is removed and data is provided to the appropriate application based on the port number.  Generally this phase is implemented in the Operating system as a part of the protocol stack, and the user is not required to code it.  
+
+As each node acts as a sender and a receiver, both these modules are required for implementation of UDP at a node.  In assignment # 2 you will write the code for the sender and receiver. The receiver detects whether a received datagram (using the sender code) is error free.
+
+UDP datagram has a simple format where the header consists of only four fields: Source port number, Destination port number, Total length, and Checksum, as indicated in the shaded part of Figure . The number of bits in each field is identified within parenthesis.
+
+ 
+
+ 
+
+Checksum
+
+The checksum is used widely in networking protocols to provide protection against errors. The UDP checksum is the 16-bit one’s complement of the one’s complement sum of the pseudo-header the UDP header, and the data.  The pseudo header contains information such as source and destination address, protocol number (=17 for UDP), that is embedded in the IP header.
+
+Details on calculation of checksum can be found here -   Checksum Calculation Links to an external site.
+
+1. Add the 16-bit values up. Each time a carry-out (17th bit) is produced, swing that bit around and add it back into the LSB (one's digit). 
+
+ 2. Once all the values are added in this manner, invert all the bits in the result. A binary value that has all the bits of another binary value inverted is called its "one's complement," or simply its "complement."
+
+Frequently asked questions regarding checksum:
+
+What am I supposed to be adding for the checksum?
+
+From the IETF standard Links to an external site.:
+
+Checksum is the 16-bit one's complement of the one's complement sum of a pseudo header of information from the IP 
+header, the UDP header, and the data, padded with zero octets at the end (if necessary) to make a multiple of two 
+octets.
+
+ So what does that mean?
+
+It means that your checksum must be the last step, since it must be after padding and total length is before padding. So you need to calculate the total length, then pad the data, then calculate the checksum. Second, it’s the “one’s complement of the one’s complement sum” of all the hextets (that’s 16 bits) that make up the packet including the pseudoheader and any padding.
+
+What about the checksum? That’s part of the udp header isn’t it? I can’t add it if I don’t know it yet!
+
+Right, so fill it in with 0 for now, then you’ll overwrite it with the result.  We’ll get to why in a little bit.
+
+Still confusing?
+
+So here’s the procedure. I’ll start with the algorithm, and then show you a more efficient way for a program to do it (not necessarily more efficient for hardware). I’ll show you on nibbles instead of hextets as an example that’s easier to follow. Suppose you have two hextets. Add them together. Any time there is an overflow to 17 bits, add that overflow back in:
+
+   1010
+ + 1000
+ 1 0010
+
+ Now we have an extra bit. Add it back in to the first 16 bits:
+
+  0010
+ +   1
+  0011
+
+ You will continue this process until you have summed up all of the hextets in the file. Once you have finished summing all of the values, take the one’s complement (i.e. invert all of the ones and zeros) of the result, So now our checksum for this input is 1100. Of course, this is only 4 bits and the checksum for your UDP packet will be 16 bits.
+
+Great, so now I’ve got a checksum and put it into the packet. I sent the packet … how do I use it at the receiver to check errors?
+You need to verify that the checksum that you received against the checksum of the whole packet that you received. So the receiver needs to calculate a new checksum and compare the two.
+
+But the pseudoheader is gone! How can I check for errors?
+
+Well sure. But do you have the information that was in it? I bet you can figure it out.
+
+Here’s a good example of this whole process in simple English (it’s worth checking out): https://en.wikibooks.org/wiki/Communication_Networks/TCP_and_UDP_Protocols/UDP#Checksum_Calculation Links to an external site.
+
+Links to an external site.Fine fine. But weren’t you going to tell me about a shortcut for the checksum?
+Instead of adding the carry in every time just add all the numbers together. Once you’ve added up the whole thing, take the least significant 16 bits and add them to the remaining bits. Now take that result and do it again, add the least significant 16 bits to the remaining bits. Keep doing this until the result fits into a hextet. Finally, take the one’s complement (i.e. invert) that result and you’re done! Here’s an example with some nibbles again:
+
+     1111
+     1101
+     1001
+     1111
+     1111
+     1001
+     1100
++    1010
+ 110 0010
+
+ Now add the carry bytes back in:
+
+     0010
++    0110
+     1000
+
+ And invert to get 0111
+
+ Why does that work?
+
+Consider what happens when there’s a carry. You’re just adding one to the part of the number greater than 16 bits. So really you can just count how many carries there are, and add those in instead. If adding those in would generate a carry as well, well that’s the leftovers that you add in again!
+
+ And the last hurrah
+
+The neat thing about a checksum is this: You receive a checksum in one’s complement. When you do the checksum on the receiver side, don’t do the final one’s complement. Add them together instead. Now if there are no errors, you will get 0xFFFF since they are the complements of each other, so all you must do is check if there are any 0s in the least significant 16 bits of that value.
+
+Although the pseudo-header mimicking the IP header is used for the checksum calculation, the actual UDP datagram does not include the pseudo-header. Data is padded with zeros at the end (if necessary) to make the length of data a multiple of two octets. Figure 1 shows a UDP datagram together with the pseudo-header used for checksum calculation. The source and destination IP addresses are represented using 4 octets (an octet consists of 8 bits). The Zeros field indicates 8 bits of 0s. The value of Protocol field is 17 (21 octal) for the UDP Protocol. (For more detailed description of the fields, refer to http://www.faqs.org/rfcs/rfc768.html Links to an external site.).  The checksum is then computed over the combination of the pseudo-header and the real data, and the value is placed into the Checksum field. Refer Sections 8.4 and 3.9.3 of the text for details on the checksum calculation.
+
+The source and destination IP addresses
+
+This is an example IP address 192.168.0.10. Get the 32 bit value  of it. The Big-endian representation of this is 0x0A00A8C0.
+
+192
+	
+
+168
+	
+
+0
+	
+
+10
+	      	
+
+10
+	
+
+0
+	
+
+168
+	
+
+192
+
+Another example: 128.125.10.4. The Big-endian representation of this is 0x040A7D80.
+
+This is the way one should store the IP addresses of source and destination in the header.
+
+Big-endian vs little-endian interpretation of the IP address:
+If I give you an IP address string “192.168.0.1” and you parse this into a big endian array of bytes  (or other 8 bit representation for whichever language you’re using), then you get
+
+[192,168,0,1]
+
+If I interpret this as a big endian 32 bit integer, that means that the most significant byte is 192 at index 0 and the least significant byte is 1 at index 3. If, on the other hand, I interpret this as a little endian integer this means that 192 is the least significant byte and 1 is the most significant byte.
+
+Here's a short python script to demonstrate the concept. For those of you writing in python, this is also a small example of using the struct library to handle how bytes are interpreted.
+
+from struct import unpack, pack
+bytes([192,168,0,1])
+bigendian = unpack('>I', ipnums)
+littlendian = unpack('<I', ipnums)
+print('big 10: {}\nbig 16: {}'.format(bigendian[0], hex(bigendian[0])))
+print('little 10: {}\nlittle 16: {}'.format(littlendian[0], hex(littlendian[0])))
+
+And this outputs: 
+
+big 10: 3232235521
+big 16: 0xc0a80001
+little 10: 16820416
+little 16: 0x100a8c0
+
+This is the address used in the example, but you can see that what was displayed in the example was actually the little-endian interpretation of an array of 4 bytes. If it were to have printed the big-endian interpretation it should have shown 3232235521 instead of 16820416. Fortunately that's not really important, I won't verify that part in the output. What DOES matter is how it's used in your checksum. Your header will contain a series of bytes in an array, something like this:
+
+[192,168,0,1,192,168,0,2, ...]
+
+The first important point is that the IP address is stored big-endian in the array so that when you calculate the checksum, you add each successive pair of bytes correctly. Meaning for the above sequence, the checksum should calculate
+
+49320 + 1 + 49320 + 2
+
+with carry wraparound as decribed in the previous announcement.
+
+So if you are displaying your checksum as bigendian and getting a different number than shown in the example, that's OK. It's not necessarily wrong, it may be interpreting the same 4 bytes differently. What's important is that your checksum results in the correct value and that the datagram you write has the correct bytes in the correct order!
+
+Total length
+
+The Total length is the length in octets(bytes) of this datagram including the header and data before padding zeros. 
+
+Functions at Sender side:
+
+Sender calculates the UDP checksum, and places it in the Checksum field. The UDP datagram sent by the sender does not include the pseudo-header used for the checksum calculation.
+
+ Functions at Receiver side:
+
+When a UDP datagram arrives at the receiver side, receiver performs an error check. It forms the pseudo-header, prepends it to the actual UDP datagram, and then performs the checksum. A mismatch indicates an error has occurred and the segment is discarded.
+
+3. Procedure
+
+Sender:
+
+    Accept 6 arguments from command line, which are “data file name”, source-ip address, destination-ip address, source-port, destination-port and the “datagram file name”
+
+    The “data file name” is the input file containing data to be sent. This can be any format, txt, doc, jpeg etc.
+    The “datagram file name” is the output file that you need to generate at the source.
+    Source and Destination IP addresses are as the name suggests IP addresses of the source and destination respectively
+    Source and Destination ports are the port numbers for the source and destination respectively
+    Example :   
+
+.\sender image.jpeg  68.87.85.98    192.168.1.102    53    59887    output
+
+    Separate the octets from the IP addresses such that each octet can be represented using 8 bits (Use string operations for this) and the IP address as a whole can be represented using the 32 bits available. There are many ways of doing this. One suggestion is using “inet_addr” in C. Also go back to the note given for Big endian IP representation earlier.  
+
+    Represent the port numbers using 16 bits. Use the command ‘atoi’ in C.
+
+    Read the data in binary format. For that use ‘fread’ in C.
+
+    Calculate the UDP length, i.e. length of the data without zero padding  and the 8-byte header provided (refer the definition given earlier). This is represented using the 16 bit fields available in the UDP datagram structure (The data available may not be in multiples of 16 bit words, so you add sufficient padding of zeros to ensure that the UDP data field is complete)
+
+    Calculate the checksum using the data thus obtained (binary data).
+
+    Write the contents of the UDP datagram into the output file which is binary file. Please read the following instructions to write in to a binary file and read data as binary.
+
+    Note that you are required to generate a Binary file containing your UDP Datagram dump. Binary files are not same as Text files, where you store 7-bit ASCII characters (and do not use the MSB).
+
+    In C you would use fprintf to write to a text file, and fscanf to read from a text file. But when you work with binary files you would use fwrite, and fread to write, and read from a file. Say, you wanted to write an unsigned short to a file and read it back. With text files you would do something similar to the following:
+    To write:
+    fprintf(fout,"%hx",val);
+    To read:
+    fprintf(fout,"%hx",&val);
+
+    But with binary files you would do something similar to the following:
+    To write:
+    fwrite(&val,sizeof(unsigned short),1,fout);
+    To read:
+    fread(&val,sizeof(unsigned short),1,fin);
+
+    Go through the manual pages of fwrite and fread for more details on the usage.
+
+ 
+Figure 2: Executing your code
+
+Test your  ‘sender’ code with the receiver code which you generate. Like below:
+
+
+Receiver:
+
+    Decrypt “data” using the code developed in Assignment 1. Use this encrypted data as the input file to the sender code in Assignment 2.
+    Accept 3 arguments from command line, which are source-ip address, destination-ip address, and the “datagram file name”.
+
+·   The “datagram file name” is the output file that was created by the source ( the file you saved as .bin).
+
+·   Source and Destination IP addresses are in dot-decimal notation. (Use the same IPs used in the sender code inputs)
+
+·    Source and Destination ports are the port numbers for the source and destination respectively (Use the same ports used in the sender code inputs)
+
+    Read the contents of the UDP datagram from the datagram file
+    Calculate the checksum.
+     If the checksum is not correct, display “Checksum Error”
+    If checksum is correct, display “Datagram from source-address xxx source-port xxx to to dest-address xxx dest-port xxx; Length xxx bytes. Here xxx corresponds to the value in appropriate format.
+    Write the decrypted “data” (ONLY) to “output file”. Compare with the original “data” used for encryption.
+
+
+WHAT TO SUBMIT
+
+    Source codes for encryption, decryption, sender and receiver.
+    Executable and the test input file you used.
+    A readme.txt file with instruction for compilation and execution.
+    Include comments in your source code help in the understanding of the same.
+    It is a good practice to include comments wherever possible and needed.
+    Include error checks wherever possible to ensure robustness of your programs.
+    You should be able to explain and demonstrate your code.
+
+
+Useful Links:
+
+UDP datagrams
+
+http://www-net.cs.umass.edu/kurose/transport/UDP.html 
+IP address conversion
+
+[python] http://code.activestate.com/recipes/66517/ 
