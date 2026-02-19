@@ -25,3 +25,6 @@ pub fn encrypt_round(data_block: u16, key: u8) -> u16 {
     let r_data_xor = xor_key(r_data, key); //xor right half 
     combine_halves(l_data, r_data_xor) //combine them and return 16 bit result
 }
+
+
+
