@@ -1,0 +1,6 @@
+This program takes a file (name.txt), encrypts its contents in 16‑bit blocks using an 8 byte rotating key in key.txt, wraps that encrypted data inside a manually constructed UDP datagram, and computes a checksum using a pseudo‑header so the receiver can detect tampering. The sender pads the payload for encryption, builds the UDP header, builds the pseudo‑header, pads the checksum buffer if needed, computes the checksum, inserts it, and writes the final binary datagram to disk. The receiver reads that datagram back, reconstructs the same pseudo‑header and zero‑checksum header, rebuilds the checksum buffer, verifies the checksum matches, decrypts the payload, removes padding, and writes the recovered data to an output file. To test it, run the sender with a small input file and valid source/destination IPs, inspect the generated datagram, then run the receiver with the same IPs to confirm the payload is recovered correctly; after that, corrupt a byte in the datagram or swap the IPs and confirm the receiver rejects it with a checksum error.
+
+This program is written in Rust, so go into the Lab2/Lab2 directory after installing rust then run the following commands. 
+
+To test sender: cargo run -- name.txt 192.168.0.1 124.26.12.24 80 22 datagram
+To test receiver: cargo run -- 192.168.0.1 124.26.12.24 datagram
