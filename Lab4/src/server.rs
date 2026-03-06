@@ -1,29 +1,35 @@
 use std::net::UdpSocket;
+use circular_buffer::CircularBuffer;
 use crate::decryption::decrypt_round;
 use crate::file_io::read_key_file;
-use crate::utilities::{BulletinMessage, current_timestamp, serialize_messages};
+use crate::utilities::{BulletinMessage, current_timestamp, format_timestamp, serialize_messages};
 
-const MAX_MESSAGES: usize = 5;
-const MAX_PACKET_SIZE: usize = 256; // 250 char max message, encrypted 1:1 so 256 is plenty
+const MAX_PACKET_SIZE: usize = 256;
 
 pub fn run_server(port: u16) -> std::io::Result<()> {
-    let bind_addr = format!("0.0.0.0:{}", port);
+    let bind_addr = format!("[::]:{}", port);
     let socket = UdpSocket::bind(&bind_addr)?;
     println!("Server listening on {}", bind_addr);
 
     let key_bytes = read_key_file("key.txt")
         .expect("Server could not read key.txt");
 
-    let mut history: Vec<BulletinMessage> = Vec::new();
+    // CircularBuffer with capacity 5. When a 6th message arrives, the oldest
+    // is automatically evicted. No manual length check needed.
+    let mut history: CircularBuffer<5, BulletinMessage> = CircularBuffer::new();
     let mut buf = [0u8; MAX_PACKET_SIZE];
 
     loop {
+        // Block until a packet arrives, then record sender address and payload size
         let (amt, src) = socket.recv_from(&mut buf)?;
         let sender_ip = src.ip().to_string();
         let encrypted_bytes = &buf[..amt];
 
+        // Decrypt the incoming payload using the shared key file
         let decrypted = decrypt_payload(encrypted_bytes, &key_bytes);
 
+        // Attempt to decode the decrypted bytes as UTF-8 text.
+        // On failure, still respond so the client does not hang waiting.
         let content = match String::from_utf8(decrypted) {
             Ok(s) => s.trim_end_matches('\0').to_string(),
             Err(_) => {
@@ -37,23 +43,28 @@ pub fn run_server(port: u16) -> std::io::Result<()> {
         println!("\n[New message from {}]", sender_ip);
         println!("  Content: {}", content);
 
-        history.push(BulletinMessage {
+        // Push new message to the back. If history is already at capacity (5),
+        // the oldest message at the front is automatically dropped.
+        history.push_back(BulletinMessage {
             content,
             sender_ip,
             timestamp: current_timestamp(),
         });
 
-        if history.len() > MAX_MESSAGES {
-            history.drain(0..history.len() - MAX_MESSAGES);
-        }
-
+        // Print the current state of the bulletin board to stdout
         print_bulletin_board(&history);
 
+        // Serialize the current history and send it back to the client
         let response = serialize_messages(&history);
         socket.send_to(&response, src)?;
     }
 }
 
+// Decrypts a byte slice using the same 16-bit block scheme as the encryption step.
+// Each pair of bytes is treated as a 16-bit block and decrypted with the
+// corresponding key byte, cycling through the 8-byte key file as needed.
+// If the input has an odd number of bytes, the final byte is treated as
+// the high byte of a block with a zero low byte.
 fn decrypt_payload(data: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     let mut decrypted = Vec::new();
     for (i, chunk) in data.chunks(2).enumerate() {
@@ -70,13 +81,16 @@ fn decrypt_payload(data: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     decrypted
 }
 
-fn print_bulletin_board(messages: &[BulletinMessage]) {
+// Prints the current bulletin board state to stdout.
+// Shows up to 5 entries with their index, timestamp,
+// sender IP, and decrypted message content.
+fn print_bulletin_board(messages: &CircularBuffer<5, BulletinMessage>) {
     println!("\n========== BULLETIN BOARD ==========");
     if messages.is_empty() {
         println!("  (no messages yet)");
     }
     for (i, msg) in messages.iter().enumerate() {
-        println!("  [{}] {} | {} | {}", i + 1, msg.timestamp, msg.sender_ip, msg.content);
+        println!("  [{}] {} | {} | {}", i + 1, format_timestamp(msg.timestamp), msg.sender_ip, msg.content);
     }
     println!("====================================\n");
 }

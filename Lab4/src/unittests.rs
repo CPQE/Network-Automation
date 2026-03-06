@@ -1,3 +1,5 @@
+use circular_buffer::CircularBuffer;
+
 use crate::utilities::{Mode, parse_args}; 
 use crate::checksum::{calculate_packet_checksum};
 use crate::utilities::{ip_to_u32_be, parse_ip, u16_to_be_bytes, u32_to_be_bytes, be_bytes_to_u16, pad_data_if_needed};
@@ -55,9 +57,11 @@ fn test_parse_args() {
                 println!("  dst_ip: {}", dst_ip);
                 println!("  datagram_file: {}", datagram_file);
             }
+            _ => {
+                println!("Mode: Unknown");
+            }
         }
     }
-
     Err(e) => {
         println!("Error: {}", e);
     }
@@ -169,13 +173,13 @@ fn test_pseudo_header_and_checksum() {
     let csum = calculate_packet_checksum(&test_data);
     println!("Checksum of [12 34 56 78] → {:#06X}", csum);
 }
-
 fn test_serialize_deserialize_messages() {
     println!("--- Testing serialize/deserialize messages ---");
-    let messages = vec![
-        BulletinMessage { content: "hello world".to_string(), sender_ip: "192.168.0.1".to_string(), timestamp: 1000 },
-        BulletinMessage { content: "second message".to_string(), sender_ip: "10.0.0.2".to_string(), timestamp: 2000 },
-    ];
+    
+    let mut messages: CircularBuffer<5, BulletinMessage> = CircularBuffer::new();
+    messages.push_back(BulletinMessage { content: "hello world".to_string(), sender_ip: "192.168.0.1".to_string(), timestamp: 1000 });
+    messages.push_back(BulletinMessage { content: "second message".to_string(), sender_ip: "10.0.0.2".to_string(), timestamp: 2000 });
+
     let serialized = serialize_messages(&messages);
     let deserialized = deserialize_messages(&serialized);
 
@@ -187,17 +191,15 @@ fn test_serialize_deserialize_messages() {
     println!("OK: serialize/deserialize roundtrip");
 
     // edge case: empty
-    let empty = serialize_messages(&[]);
-    let empty_des = deserialize_messages(&empty);
+    let empty: CircularBuffer<5, BulletinMessage> = CircularBuffer::new();
+    let empty_des = deserialize_messages(&serialize_messages(&empty));
     assert_eq!(empty_des.len(), 0);
     println!("OK: empty message list");
 
-    // edge case: pipe character handling (pipe is our delimiter so worth checking)
-    let tricky = vec![
-        BulletinMessage { content: "no pipes here".to_string(), sender_ip: "1.2.3.4".to_string(), timestamp: 99 },
-    ];
-    let s = serialize_messages(&tricky);
-    let d = deserialize_messages(&s);
+    // edge case: pipe character in content would break splitn
+    let mut tricky: CircularBuffer<5, BulletinMessage> = CircularBuffer::new();
+    tricky.push_back(BulletinMessage { content: "no pipes here".to_string(), sender_ip: "1.2.3.4".to_string(), timestamp: 99 });
+    let d = deserialize_messages(&serialize_messages(&tricky));
     assert_eq!(d[0].content, "no pipes here");
     println!("OK: tricky content roundtrip");
 }

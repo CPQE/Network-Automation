@@ -1,7 +1,7 @@
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
-
-
+use circular_buffer::CircularBuffer;
+use chrono::{DateTime, Utc};
 
 pub struct BulletinMessage {
     pub content: String,      // decrypted message text
@@ -16,10 +16,12 @@ pub fn current_timestamp() -> u64 {
         .as_secs()
 }
 
+
+
 pub fn format_timestamp(ts: u64) -> String {
-    // simple formatting, e.g. "1714500000"
-    // you can prettify later, for now raw seconds is fine
-    format!("{}", ts)
+    let dt = DateTime::<Utc>::from_timestamp(ts as i64, 0)
+        .unwrap_or_default();
+    dt.format("%b %e %H:%M:%S").to_string()
 }
 
 pub enum Mode {
@@ -99,9 +101,6 @@ pub fn parse_args() -> Result<Mode, String> {
     }
 }
 
-
-
-
 pub fn parse_ip(ip: &str) -> Result<[u8; 4], String> {
     let parts: Vec<&str> = ip.split('.').collect(); //make input string into string array demilited by .
     if parts.len() != 4 { //throw error if not right size
@@ -157,7 +156,7 @@ pub fn pad_data_if_needed(data: &mut Vec<u8>) {
 
 // Serialize the last 5 messages into a single byte buffer to send over UDP
 // Format per message: "IP|TIMESTAMP|CONTENT\n"
-pub fn serialize_messages(messages: &[BulletinMessage]) -> Vec<u8> {
+pub fn serialize_messages(messages: &CircularBuffer<5, BulletinMessage>) -> Vec<u8> {
     let mut out = String::new();
     for msg in messages {
         out.push_str(&format!("{}|{}|{}\n", msg.sender_ip, msg.timestamp, msg.content));

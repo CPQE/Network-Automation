@@ -1,3 +1,5 @@
+//symmetric key encryption (DES-style) from assignment 1
+//Swap s bits in a 16 bit block, xor's the right half with a key, and combines the halves back together
 pub fn swap_bits(x: u16, p1: u32, p2: u32, n: u32) -> u16 {
     //Swaps n bits starting at positions p1 and p2.
     let mask = (1u16 << n) - 1;
@@ -18,6 +20,7 @@ pub fn combine_halves(l_data: u8, r_data: u8) -> u16 {
     ((l_data as u16) << 8) | (r_data as u16)
 }
 
+//repeated 8 times in main, each time with a different key
 pub fn encrypt_round(data_block: u16, key: u8) -> u16 {
     let swapped = swap_bits(data_block, 0, 8, 8); //swap lower and upper 8 bits
     let l_data = (swapped >> 8) as u8; //separate the left and right halves

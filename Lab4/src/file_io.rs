@@ -13,7 +13,6 @@ pub fn read_key_file(path: &str) -> io::Result<Vec<u8>> {
     Ok(bytes[..8].to_vec())
 }
 
-
 //sender functions
 pub fn read_file_bytes(path: &str) -> io::Result<Vec<u8>> {
     //this is for the sender to read payload file, convert it into raw bytes, pad if needed, and then calculate checksum

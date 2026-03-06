@@ -1,6 +1,5 @@
 
 use std::io;
-
 use crate::decryption::decrypt_round;
 use crate::file_io::{read_file_bytes, read_key_file};
 use crate::headers::{build_pseudo_header, build_udp_header_without_checksum};
@@ -14,6 +13,7 @@ pub struct ParsedUdpPacket {
     pub checksum: u16,
     pub payload: Vec<u8>, //decrypted data from payload
 }
+
 //receiver has to read datagram file, parse UDP header, verify checksum, extract payload, and write payload to output file.
 pub fn parse_udp_datagram(
     path: &str, 

@@ -1,13 +1,14 @@
 
+//calculates udp checksum for a packet by adding all 16 bit words together (1's complement), and then taking the 1's complement of the sum.
 pub fn calculate_packet_checksum(data: &[u8]) -> u16 {
     let mut words = Vec::new();
 
     // Convert bytes to u16 words 
     for chunk in data.chunks(2) {
         let word = if chunk.len() == 2 {
-            ((chunk[0] as u16) << 8) | (chunk[1] as u16)
+            ((chunk[0] as u16) << 8) | (chunk[1] as u16) //build 16 bit number from 2 bytes in big-endian order
         } else {
-            (chunk[0] as u16) << 8
+            (chunk[0] as u16) << 8   //pad with 0 if odd number of bytes
         };
         words.push(word);
     }
