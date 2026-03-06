@@ -19,8 +19,8 @@ use crate::receiver::{parse_udp_datagram, write_payload_to_file};
 fn main() {
     //assignment 4: 
     // cargo run -- server 8080   (to start the server)
-    // cargo run -- client 127.0.0.1 8080 (stdin mode) (Send messages from stdin on client side)     
-    // cargo run -- client 127.0.0.1 8080 messages.txt (file mode) (send messages from the file on the client side)
+    // cargo run -- client ::1 8080 (stdin mode with IPv6) (Send messages from stdin on client side using IPv6) 
+    // cargo run -- client ::1 8080 messages.txt (file mode) (send messages from the file on the client side)
     //assignment 2:
     //to test sender: cargo run -- name.txt 192.168.0.1 124.26.12.24 80 22 datagram
     //to test receiver: cargo run -- 192.168.0.1 124.26.12.24 datagram

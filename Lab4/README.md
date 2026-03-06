@@ -17,6 +17,7 @@ cargo run -- client
 Example:
 ```bash
 cargo run -- client 127.0.0.1 8080
+cargo run -- client [::1] 8080
 ```
 
 ### Client (file input)
@@ -26,20 +27,17 @@ cargo run -- client
 Example:
 ```bash
 cargo run -- client 127.0.0.1 8080 messages.txt
+cargo run -- client [::1] 8080 messages.txt
+
 ```
 The entire file contents are sent as a single message.
+On FABRIC, need to SCP the zipped Lab4 file, gunzip to unzip it, 
+then 'cargo build' and then run the above client lines with the loopback
+address replaced with the address of the node acting as the server.
 
-### Sender (Lab 2/3 manual datagram mode)
-```bash
-cargo run -- sender      
-```
-
-### Receiver (Lab 2/3 manual datagram mode)
-```bash
-cargo run -- receiver   
-```
-
-
+Challenges: Realizing that the 'top 5 messages' should be handled as a queue/CircularBuffer. 
+Once I realized that, things sort of fell into place on the local side, and getting a small example with 
+2 terminals acting as client/server was easy. However, it was much more difficult to 
 
 ## Overview
 
