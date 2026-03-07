@@ -22,7 +22,7 @@ pub fn run_client(server_ip: &str, port: u16, input_file: Option<&str>) -> std::
             let bytes = read_file_bytes(path)?;
             let text = String::from_utf8(bytes)
                 .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "File is not valid UTF-8"))?;
-            let text = text.trim();
+            let text = text.lines().next().unwrap_or("").trim(); //was just .trim() before
             if text.len() > 250 {
                 eprintln!("Message too long, max 250 characters");
                 return Ok(());
