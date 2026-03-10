@@ -1,4 +1,4 @@
- UDP Encrypted Bulletin Board
+UDP Encrypted Bulletin Board
 
 Rust implementation of an encrypted UDP client-server bulletin board system, built on top of a previous assignment's encryption and checksum infrastructure.
 ## How to run: 
@@ -18,8 +18,8 @@ Example:
 ```bash
 cargo run -- client 127.0.0.1 8080
 cargo run -- client [::1] 8080
+cargo run -- client fd00::1 8080 
 ```
-
 ### Client (file input)
 ```bash
 cargo run -- client   
@@ -28,16 +28,39 @@ Example:
 ```bash
 cargo run -- client 127.0.0.1 8080 messages.txt
 cargo run -- client [::1] 8080 messages.txt
-
+cargo run -- client fd00::1 8080 messages.txt
 ```
-The entire file contents are sent as a single message.
-On FABRIC, need to SCP the zipped Lab4 file, gunzip to unzip it, 
+On environments: 
+for server: 
+sudo ip addr add fd00::1/64 dev enp7s0
+
+on clients (first one as example, next can be fd00::3/64, etc.):
+sudo ip addr add fd00::2/64 dev enp7s0 
+
+for all need to install rust and enable its environment settings, put enp7s0 up and install build tools for rust:
+sudo apt install build-essential (if not already installed)
+sudo apt-get install -y net-tools (if not already installed)
+sudo apt install unzip
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+sudo ip link set enp7s0 up
+scp Lab4.zip with instructions stated in challenges section. 
+cargo build (MUST be done before doing cargo run)
+
+On FABRIC, need to SCP a zipped form of Lab4, gunzip to unzip it
 then 'cargo build' and then run the above client lines with the loopback
 address replaced with the address of the node acting as the server.
-
-Challenges: Realizing that the 'top 5 messages' should be handled as a queue/CircularBuffer. 
+My servers did not have the necessary global unicast addresses (only link-local, which are only suitable for point-to-point links) created on all the interfaces so I had to assign them and enable them.
+** Challenges **
+Realizing that the 'top 5 messages' should be handled as a queue/CircularBuffer. 
 Once I realized that, things sort of fell into place on the local side, and getting a small example with 
-2 terminals acting as client/server was easy. However, it was much more difficult to 
+2 terminals acting as client/server was easy. However, it was much more difficult to actually CONFIGURE the servers correctly, 
+especially because the scripts stopped working, btw the Lab4.ipynb setup file and the configure.ipynb file there's configuration
+inconsistencies btw the bastion/sliver key and when they should be used. For the SCP command I HAD to use my BASTION key, NOT my 
+Sliver key. I also had to use this for scp, where the ipv6 is the enp3s0 global unicast address:  
+
+scp -F /home/fabric/work/fabric_config/ssh_config -i /home/fabric/work/fabric_config/Desktop_Cyrus_Bastion_Key ./Lab4.zip  ubuntu@[2610:1e0:1700:206:f816:3eff:fe7d:dafb]:~/
+
 
 ## Overview
 
