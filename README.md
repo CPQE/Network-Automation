@@ -1,1 +1,1 @@
-This is where I'll store some stuff for ECE 456 at CSU and other cool networking labs and projects. 
+Based on ECE 456 at Colorado State University, this repository contains network automation projects primarily built in Rust and C. 
