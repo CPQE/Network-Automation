@@ -33,6 +33,9 @@ pub fn run_tcp_client(server_ip: &str, port: u16, filename: &str) -> io::Result<
         "REJECT" => {
             println!("Server rejected the file. Closing connection.");
         }
+         "SERVER_FULL" => {
+          println!("Server is full, try again later.");
+        }
         _ => {
             eprintln!("Unknown server response: {}", response);
         }
