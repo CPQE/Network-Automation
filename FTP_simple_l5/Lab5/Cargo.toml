@@ -1,0 +1,8 @@
+[package]
+name = "Lab5"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.44"
+circular-buffer = "1.2.0"

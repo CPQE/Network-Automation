@@ -1,0 +1,16 @@
+
+New files I need:
+client.rs — accepts server IP/port and a message (from file or keyboard), encrypts it using my existing encrypt_round, 
+sends it over a real UDP socket, waits for the server's response, and displays most recent 5 messages received.
+server.rs — binds a UDP socket, waits for incoming encrypted messages, decrypts them using decrypt_round, maintains a list of the 5 most recent messages (with timestamp and sender IP), and sends that list back to the client as a response.
+Reuse from existing code:
+Your encryption.rs and decryption.rs work as-is. 
+Steps in order:
+Update utilities.rs — add new CLI arg parsing for client/server modes, and a 
+simple struct to represent a bulletin board message (content, timestamp, IP).
+Write server.rs — socket bind, receive loop, decrypt, maintain the 5-message history, send history back.
+Write client.rs — socket setup, read message (file or stdin), encrypt, send, receive and print response.
+Update main.rs — add branches for the new client/server modes.
+
+The trickiest part will be deciding on a wire format for the server's response (how you serialize the 5 
+messages + timestamps + IPs to send back). A simple newline-delimited text format would work fine here.
