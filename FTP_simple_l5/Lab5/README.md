@@ -46,7 +46,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 ```
 
-SCP the zipped project to each node (must use Bastion key and enp3s0 global unicast address):
+SCP or upload the zipped project to each node (must use Bastion key and enp3s0 global unicast address):
 ```
 scp -F /home/fabric/work/fabric_config/ssh_config -i /home/fabric/work/fabric_config/Desktop_Cyrus_Bastion_Key ./Lab5.zip ubuntu@[<enp3s0_ipv6>]:~/
 ```

@@ -1,0 +1,22 @@
+
+Assignment 1 Option 1 was implemented using a modular Python script designed to handle 16-bit block encryption through an eight-stage network. 
+The core architecture treats the data as a series of 16-bit integers, which are further divided into two 8-bit halves representing the left and 
+right bytes of the block. During the encryption process, each stage performs a specific sequence where the left and right halves are interchanged, 
+and the new right half—originally the left byte—is modified through a bitwise XOR operation with a stage-specific sub-key. This transformation is
+repeated eight times using a key schedule derived from an 8-byte key file, where each character in the file serves as a sub-key for a specific
+round of the network.A significant challenge encountered during development was the mathematical inversion of the round function for decryption.
+Unlike some Feistel networks that are self-inverting, this specific swap-and-XOR sequence requires a distinct inverse operation to recover the 
+original data. I resolved this by deriving an inverse logic that reverses the steps: first XORing the right half with the sub-key to retrieve
+the original left byte, and then swapping the halves back to their initial positions. To ensure this worked correctly, the sub-keys had to be 
+applied in reverse order, starting from the eighth key and moving back to the first. Another technical hurdle involved byte ordering and 
+file lengths. Because the script processes 16-bit blocks, the way bytes are read from the disk is critical. Systems using little-endian 
+architecture can inadvertently swap the order of bytes when reading them as integers, which would break the cipher's consistency across 
+different platforms. This was resolved by explicitly defining big-endian byte ordering during all file read and write operations, ensuring
+the first byte in the file always represents the left half of the block. Furthermore, to handle files with an odd number of bytes, a 
+padding mechanism was implemented to append a null byte to the final block, allowing the encryption loop to complete without ignoring data.
+Verification of the software was conducted through a series of rigorous tests. First, a known-plaintext test was performed using the values 
+provided in the assignment documentation, specifically encrypting the string a1b= with the key ;lkjhgfd. The resulting ciphertext was 
+inspected using a hex editor to confirm it matched the expected hex values of 3F 34 3C 38. Finally, a round-trip consistency test was performed 
+on a larger file containing a mix of displayable and non-displayable characters. By encrypting the file and then decrypting the result, 
+I used the fc utility on Windows to compare the original and restored files, confirming they were bit-for-bit identical and that the 
+implementation was lossless and mathematically sound. 
