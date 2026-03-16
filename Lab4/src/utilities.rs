@@ -17,7 +17,6 @@ pub fn current_timestamp() -> u64 {
 }
 
 
-
 pub fn format_timestamp(ts: u64) -> String {
     let dt = DateTime::<Utc>::from_timestamp(ts as i64, 0)
         .unwrap_or_default();

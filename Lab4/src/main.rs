@@ -51,19 +51,18 @@ fn main() {
                 .expect("Failed to write recovered payload");
             println!("Receiver: wrote recovered.txt");
         }
-
+        // starts the server on a given port       
         Ok(Mode::Server { port }) => {
             println!("Running in SERVER mode");
             server::run_server(port)
                 .expect("Server error");
         }
-
+         //Connects to the server by IP and port, and can either read from stdin or from a file
         Ok(Mode::Client { server_ip, port, input_file }) => {
             println!("Running in CLIENT mode");
             client::run_client(&server_ip, port, input_file.as_deref())
                 .expect("Client error");
         }
-
         Err(e) => {
             eprintln!("Error: {}", e);
             std::process::exit(1);

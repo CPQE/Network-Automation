@@ -5,13 +5,13 @@ use crate::file_io::read_key_file;
 use crate::utilities::{BulletinMessage, current_timestamp, format_timestamp, serialize_messages};
 
 const MAX_PACKET_SIZE: usize = 256;
-
+//bind to socket
 pub fn run_server(port: u16) -> std::io::Result<()> {
-    let bind_addr = format!("[::]:{}", port);
+    let bind_addr = format!("[::]:{}", port); //:: lets any address connect (ipv6)
     let socket = UdpSocket::bind(&bind_addr)?;
     println!("Server listening on {}", bind_addr);
-
-    let key_bytes = read_key_file("key.txt")
+    //read in key file
+    let key_bytes = read_key_file("key.txt") 
         .expect("Server could not read key.txt");
 
     // CircularBuffer with capacity 5. When a 6th message arrives, the oldest
@@ -19,14 +19,14 @@ pub fn run_server(port: u16) -> std::io::Result<()> {
     let mut history: CircularBuffer<5, BulletinMessage> = CircularBuffer::new();
     let mut buf = [0u8; MAX_PACKET_SIZE];
 
-    loop {
+    loop { //server runs in infinite loop until user presses ctrl+c to terminate
         // Block until a packet arrives, then record sender address and payload size
         let (amt, src) = socket.recv_from(&mut buf)?;
         let sender_ip = src.ip().to_string();
         let encrypted_bytes = &buf[..amt];
 
         // Decrypt the incoming payload using the shared key file
-        let decrypted = decrypt_payload(encrypted_bytes, &key_bytes);
+        let decrypted = decrypt_payload(encrypted_bytes, &key_bytes); //decrypt received payload
 
         // Attempt to decode the decrypted bytes as UTF-8 text.
         // On failure, still respond so the client does not hang waiting.
