@@ -105,7 +105,7 @@ fn drain_queue(
 // Handles a single file transfer from filename negotiation through to receipt
 fn handle_transfer(mut stream: TcpStream, peer: String, stdin_lock: Arc<Mutex<()>>) {
     println!("[{}] Handling transfer", peer);
-    if let Err(e) = handle_client(&mut stream, stdin_lock) {
+    if let Err(e) = handle_client(&mut stream, stdin_lock, &peer) {
         eprintln!("[{}] Error during transfer: {}", peer, e);
     }
 }
@@ -113,27 +113,22 @@ fn handle_transfer(mut stream: TcpStream, peer: String, stdin_lock: Arc<Mutex<()
 // Handles accept/reject negotiation and file receipt for one client.
 // Acquires the stdin lock before prompting so concurrent threads
 // don't interleave their prompts.
-fn handle_client(stream: &mut TcpStream, stdin_lock: Arc<Mutex<()>>) -> io::Result<()> {
+fn handle_client(stream: &mut TcpStream, stdin_lock: Arc<Mutex<()>>, peer: &str) -> io::Result<()> {
     let filename = read_line_from_stream(stream)?;
     println!("Client wants to transfer: '{}'", filename);
 
     // Acquire stdin lock before prompting — held until end of operator interaction
     let _guard = stdin_lock.lock().unwrap();
 
-    print!("Accept file? (yes/no): ");
+    print!("[{}] Accept file '{}' ? (yes/no): ", peer, filename);
     io::stdout().flush()?;
     let mut response = String::new();
     io::stdin().lock().read_line(&mut response)?;
 
     if response.trim().eq_ignore_ascii_case("yes") {
         stream.write_all(b"ACCEPT\n")?;
-
-        print!("Save file as: ");
-        io::stdout().flush()?;
-        let mut save_name = String::new();
-        io::stdin().lock().read_line(&mut save_name)?;
-        let save_name = save_name.trim().to_string();
-
+        //automatically save file with sent filename and peer address prepended.
+       let save_name = format!("{}_{}", peer, filename).replace(":", "_").replace("[", "").replace("]", "");
         // Drop stdin lock before receiving file so other threads can prompt
         // while this thread is busy receiving data
         drop(_guard);
