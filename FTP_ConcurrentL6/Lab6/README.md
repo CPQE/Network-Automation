@@ -67,8 +67,10 @@ unzip Lab6.zip
 cd Lab6
 cargo build
 ```
-
 Replace `::1` loopback with the `fd00::` address of the server node when running on FABRIC.
+
+On one machine can test multiple processes going in before any finish: 
+for i in {1..8}; do ./Lab6 tcp_client fd00::1 8080 bigfile.bin & done
 
 ## Overview
 

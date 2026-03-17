@@ -42,6 +42,8 @@ dist/
 **/*.tfvars
 **/.terraform/**
 **/.terraform.lock.hcl/**
+**/terraform.tfvars
+**/*.tfvars*
 **/.vscode/**
 **/.idea/**
 **/.DS_Store/**
@@ -50,3 +52,5 @@ dist/
 **/.env.*.local/**
 **/*.zip
 **/target/debug/
+#can remove later if deemed safe
+**/Screenshots/**
