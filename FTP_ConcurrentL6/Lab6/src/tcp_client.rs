@@ -6,9 +6,9 @@ const CHUNK_SIZE: usize = 1024;
 
 pub fn run_tcp_client(server_ip: &str, port: u16, filename: &str) -> io::Result<()> {
     let server_addr = format!("[{}]:{}", server_ip, port);
-    println!("Connecting to {}...", server_addr);
+    println!("Connecting to {}...", server_addr);  
 
-    let mut stream = TcpStream::connect(&server_addr)?;
+    let mut stream = TcpStream::connect(&server_addr)?;//tcp connection establishes, blocks until succeeds/fails
     println!("Connected.");
 
     // Send filename to server
@@ -59,7 +59,7 @@ fn send_file(stream: &mut TcpStream, path: &str) -> io::Result<()> {
             break;
         }
         stream.write_all(&buf[..n])?;
-        total += n;
+        total +=  n;
         println!("  Sent {} bytes ({} total)", n, total);
     }
 
@@ -69,7 +69,7 @@ fn send_file(stream: &mut TcpStream, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-// Reads a newline terminated string from the stream byte by byte
+// Reads a newline terminated string from the stream byte by byte until newline or stream closes.
 fn read_line_from_stream(stream: &mut TcpStream) -> io::Result<String> {
     let mut result = String::new();
     let mut buf = [0u8; 1];

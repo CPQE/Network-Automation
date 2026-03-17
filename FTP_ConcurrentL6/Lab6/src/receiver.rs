@@ -3,7 +3,7 @@ use std::io;
 use crate::decryption::decrypt_round;
 use crate::file_io::{read_file_bytes, read_key_file};
 use crate::headers::{build_pseudo_header, build_udp_header_without_checksum};
-use crate::utilities::{be_bytes_to_u16, u16_to_be_bytes, pad_data_if_needed};
+use crate::utilities::{be_bytes_to_u16, pad_data_if_needed};
 use crate::checksum::calculate_packet_checksum;
 
 pub struct ParsedUdpPacket {

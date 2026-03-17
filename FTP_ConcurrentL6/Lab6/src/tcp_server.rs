@@ -17,11 +17,14 @@ pub fn run_tcp_server(port: u16) -> io::Result<()> {
     println!("Max concurrent transfers: {}", MAX_CONCURRENT);
     println!("Max queued transfers: {}", MAX_QUEUED);
 
-    // Shared active thread counter — decremented when a transfer finishes
+    // Shared active thread counter, acts like a counting semaphore
     let active_count = Arc::new(Mutex::new(0usize));
 
     // Shared FIFO queue of waiting connections
     let queue: Arc<Mutex<VecDeque<TcpStream>>> = Arc::new(Mutex::new(VecDeque::new()));
+
+    // Shared stdin lock so only one thread prompts the operator at a time
+    let stdin_lock: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
 
     for stream in listener.incoming() {
         match stream {
@@ -40,14 +43,14 @@ pub fn run_tcp_server(port: u16) -> io::Result<()> {
 
                     let active_count_clone = Arc::clone(&active_count);
                     let queue_clone = Arc::clone(&queue);
+                    let stdin_lock_clone = Arc::clone(&stdin_lock);
 
                     thread::spawn(move || {
-                        handle_transfer(stream, peer);
-                        // Transfer done, decrement active count and check queue
-                        drain_queue(active_count_clone, queue_clone);
+                        handle_transfer(stream, peer, stdin_lock_clone);
+                        drain_queue(active_count_clone, queue_clone, Arc::new(Mutex::new(())));
                     });
                 } else if q.len() < MAX_QUEUED {
-                    // No slot available but queue has room
+                    // No slot available but queue has room, client waits
                     println!("All slots busy, queuing connection from {} ({}/{})", peer, q.len() + 1, MAX_QUEUED);
                     q.push_back(stream);
                 } else {
@@ -66,15 +69,18 @@ pub fn run_tcp_server(port: u16) -> io::Result<()> {
     Ok(())
 }
 
-// Called when a transfer thread finishes. Decrements the active count and
-// checks if anything is waiting in the queue to be dispatched.
-fn drain_queue(active_count: Arc<Mutex<usize>>, queue: Arc<Mutex<VecDeque<TcpStream>>>) {
+// Called when a transfer thread finishes. Decrements active count and
+// dispatches the next queued connection if one exists.
+fn drain_queue(
+    active_count: Arc<Mutex<usize>>,
+    queue: Arc<Mutex<VecDeque<TcpStream>>>,
+    stdin_lock: Arc<Mutex<()>>,
+) {
     let mut active = active_count.lock().unwrap();
     let mut q = queue.lock().unwrap();
 
     *active -= 1;
 
-    // If something is waiting in the queue, pop it and spawn a new thread
     if let Some(next_stream) = q.pop_front() {
         let peer = next_stream.peer_addr()
             .map(|a| a.to_string())
@@ -87,29 +93,33 @@ fn drain_queue(active_count: Arc<Mutex<usize>>, queue: Arc<Mutex<VecDeque<TcpStr
 
         let active_count_clone = Arc::clone(&active_count);
         let queue_clone = Arc::clone(&queue);
+        let stdin_lock_clone = Arc::clone(&stdin_lock);
 
         thread::spawn(move || {
-            handle_transfer(next_stream, peer);
-            drain_queue(active_count_clone, queue_clone);
+            handle_transfer(next_stream, peer, stdin_lock_clone.clone());
+            drain_queue(active_count_clone, queue_clone, stdin_lock_clone);
         });
     }
 }
 
 // Handles a single file transfer from filename negotiation through to receipt
-fn handle_transfer(mut stream: TcpStream, peer: String) {
+fn handle_transfer(mut stream: TcpStream, peer: String, stdin_lock: Arc<Mutex<()>>) {
     println!("[{}] Handling transfer", peer);
-    if let Err(e) = handle_client(&mut stream) {
+    if let Err(e) = handle_client(&mut stream, stdin_lock) {
         eprintln!("[{}] Error during transfer: {}", peer, e);
     }
 }
 
-// Handles accept/reject negotiation and file receipt for one client
-fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
-    // Read the filename proposed by the client
+// Handles accept/reject negotiation and file receipt for one client.
+// Acquires the stdin lock before prompting so concurrent threads
+// don't interleave their prompts.
+fn handle_client(stream: &mut TcpStream, stdin_lock: Arc<Mutex<()>>) -> io::Result<()> {
     let filename = read_line_from_stream(stream)?;
     println!("Client wants to transfer: '{}'", filename);
 
-    // Prompt server operator to accept or reject
+    // Acquire stdin lock before prompting — held until end of operator interaction
+    let _guard = stdin_lock.lock().unwrap();
+
     print!("Accept file? (yes/no): ");
     io::stdout().flush()?;
     let mut response = String::new();
@@ -118,15 +128,17 @@ fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
     if response.trim().eq_ignore_ascii_case("yes") {
         stream.write_all(b"ACCEPT\n")?;
 
-        // Prompt for local save name
         print!("Save file as: ");
         io::stdout().flush()?;
         let mut save_name = String::new();
         io::stdin().lock().read_line(&mut save_name)?;
         let save_name = save_name.trim().to_string();
 
-        receive_file(stream, &save_name)?;
+        // Drop stdin lock before receiving file so other threads can prompt
+        // while this thread is busy receiving data
+        drop(_guard);
 
+        receive_file(stream, &save_name)?;
         stream.write_all(b"SUCCESS\n")?;
         println!("File saved as '{}'", save_name);
     } else {
