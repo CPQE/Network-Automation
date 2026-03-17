@@ -54,3 +54,4 @@ dist/
 **/target/debug/
 #can remove later if deemed safe
 **/Screenshots/**
+*.png
