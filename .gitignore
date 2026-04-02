@@ -1,4 +1,4 @@
-**/target/*
+**/target/
 **/bin/*
 **/obj/*
 **/packages/*
@@ -19,3 +19,4 @@
 **/.env.*.local/**
 **/*.zip
 **/target/debug/
+*.pdf 
