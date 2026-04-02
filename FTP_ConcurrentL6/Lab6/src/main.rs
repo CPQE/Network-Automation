@@ -22,16 +22,13 @@ fn main() {
     // Lab 2/3 (manual UDP datagram builder):
     // cargo run -- sender <data_file> <src_ip> <dst_ip> <src_port> <dst_port> <output_file>
     // cargo run -- receiver <src_ip> <dst_ip> <datagram_file>
-
     // Lab 4 (UDP encrypted bulletin board):
     // cargo run -- server 8080
     // cargo run -- client ::1 8080           (stdin mode, IPv6 loopback)
     // cargo run -- client ::1 8080 name.txt  (file mode, IPv6 loopback)
-
     // Lab 5 (TCP file transfer):
     // cargo run -- tcp_server 8080
     // cargo run -- tcp_client ::1 8080 name.txt
-
     // Set to true to run unit tests before dispatching to a mode
     let testing = false; 
     if testing {

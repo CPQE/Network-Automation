@@ -4,7 +4,7 @@ Rust implementation of an encrypted UDP client-server bulletin board system, bui
 ## How to run: 
 ### Server
 ```bash
-cargo run -- server 
+cargo run -- server < port >
 ```
 Example:
 ```bash
@@ -12,7 +12,7 @@ cargo run -- server 8080
 ```
 ### Client (keyboard input)
 ```bash
-cargo run -- client  
+cargo run -- client  < ip address > < server port > 
 ```
 Example:
 ```bash
@@ -22,7 +22,7 @@ cargo run -- client fd00::1 8080
 ```
 ### Client (file input)
 ```bash
-cargo run -- client   
+cargo run -- client < ip address > < server port > < filename >
 ```
 Example:
 ```bash
@@ -34,8 +34,11 @@ On environments:
 for server: 
 sudo ip addr add fd00::1/64 dev enp7s0
 
-on clients (first one as example, next can be fd00::3/64, etc.):
+On clients (first one as example, next can be fd00::3/64, etc.):
 sudo ip addr add fd00::2/64 dev enp7s0 
+
+Then enable the interface (repeat for all servers):
+sudo ip link set enp7s0 up
 
 for all need to install rust and enable its environment settings, put enp7s0 up and install build tools for rust:
 sudo apt install build-essential (if not already installed)
@@ -43,7 +46,7 @@ sudo apt-get install -y net-tools (if not already installed)
 sudo apt install unzip
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
-sudo ip link set enp7s0 up
+
 scp Lab4.zip with instructions stated in challenges section. 
 cargo build (MUST be done before doing cargo run)
 
@@ -51,6 +54,7 @@ On FABRIC, need to SCP a zipped form of Lab4, gunzip to unzip it
 then 'cargo build' and then run the above client lines with the loopback
 address replaced with the address of the node acting as the server.
 My servers did not have the necessary global unicast addresses (only link-local, which are only suitable for point-to-point links) created on all the interfaces so I had to assign them and enable them.
+
 ** Challenges **
 Realizing that the 'top 5 messages' should be handled as a queue/CircularBuffer. 
 Once I realized that, things sort of fell into place on the local side, and getting a small example with 

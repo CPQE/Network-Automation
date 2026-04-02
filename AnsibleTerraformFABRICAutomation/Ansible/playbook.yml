@@ -1,0 +1,101 @@
+# ansible/playbook.yml
+# ansible-playbook playbook.yml -e "cargo_run_args='--ip 10.0.0.1 --port 8080'"
+- name: Configure FABRIC lab nodes
+  hosts: servers
+  become: yes
+  vars:
+    lab_number: 5
+    lab_zip: "Lab{{ lab_number }}.zip"
+    ubuntu_home: /home/ubuntu
+    cargo_run_args: "cargo run -- tcp_server 8080"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - net-tools
+          - unzip
+          - build-essential
+        state: present
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Upload lab zip
+      copy:
+        src: "{{ lab_zip }}"
+        dest: "{{ ubuntu_home }}/{{ lab_zip }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Upload rustup installer
+      copy:
+        src: rustup-init.sh
+        dest: "{{ ubuntu_home }}/rustup-init.sh"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Check if Rust is already installed
+      stat:
+        path: "{{ ubuntu_home }}/.cargo/bin/rustc"
+      register: rustc_bin
+
+    - name: Install Rust via rustup
+      become_user: ubuntu
+      shell: "{{ ubuntu_home }}/rustup-init.sh -y"
+      when: not rustc_bin.stat.exists
+
+    - name: Ensure cargo env is sourced in .bashrc
+      lineinfile:
+        path: "{{ ubuntu_home }}/.bashrc"
+        line: 'source $HOME/.cargo/env'
+        state: present
+
+    - name: Unzip lab archive
+      unarchive:
+        src: "{{ ubuntu_home }}/{{ lab_zip }}"
+        dest: "{{ ubuntu_home }}"
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Find Cargo.toml to locate project root
+      find:
+        paths: "{{ ubuntu_home }}"
+        patterns: "Cargo.toml"
+        recurse: yes
+      register: cargo_toml
+
+    - name: cargo build
+      become_user: ubuntu
+      shell: |
+        source $HOME/.cargo/env
+        cargo build
+      args:
+        chdir: "{{ cargo_toml.files[0].path | dirname }}"
+        executable: /bin/bash
+      register: cargo_build_result
+
+    - name: Show cargo build output
+      debug:
+        var: cargo_build_result.stdout_lines
+
+    - name: cargo run
+      become_user: ubuntu
+      shell: |
+        source $HOME/.cargo/env
+        cargo run -- {{ cargo_run_args }}
+      args:
+        chdir: "{{ cargo_toml.files[0].path | dirname }}"
+        executable: /bin/bash
+      register: cargo_run_result
+
+    - name: Show cargo run output
+      debug:
+        var: cargo_run_result.stdout_lines
