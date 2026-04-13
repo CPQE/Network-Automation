@@ -1,0 +1,37 @@
+- hosts: fabric_nodes
+  tasks:
+    - name: Upload Lab8.zip
+      copy:
+        src: /home/fabric/work/jupyter-examples-rel1.9.0/configure_and_validate/Lab8.zip
+        dest: /home/ubuntu/Lab8.zip
+    - name: Unzip Lab8
+      command: unzip -o /home/ubuntu/Lab8.zip -d /home/ubuntu
+      
+    - name: Upload rustup-init.sh
+      copy:
+        src: /home/fabric/work/jupyter-examples-rel1.9.0/configure_and_validate/rustup-init.sh
+        dest: /home/ubuntu/rustup-init.sh
+
+    - name: change permissions rustup-init.sh
+      command: sudo chmod +x /home/ubuntu/rustup-init.sh
+      
+    - name: Install Rust from local installer
+      shell: /home/ubuntu/rustup-init.sh -y
+      environment:
+        HOME: /home/ubuntu
+        RUSTUP_HOME: /home/ubuntu/.rustup
+        CARGO_HOME: /home/ubuntu/.cargo
+        
+    - name: Add cargo to PATH
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'source $HOME/.cargo/env'
+        state: present
+      become: no
+    
+    - name: Build Lab8
+      shell: cd ~/Lab8 && ~/.cargo/bin/cargo build --release
+      environment:
+        HOME: /home/ubuntu
+        RUSTUP_HOME: /home/ubuntu/.rustup
+        CARGO_HOME: /home/ubuntu/.cargo
