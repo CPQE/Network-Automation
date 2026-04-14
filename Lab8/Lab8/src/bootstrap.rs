@@ -31,7 +31,13 @@ pub fn register(
             Ok((n, _)) => {
                 let response = String::from_utf8_lossy(&buf[..n]).to_string();
                 println!("Bootstrap response: {}", response);
-                return parse_regok(&response);
+                match parse_regok(&response) {
+                    Ok(result) => return Ok(result),
+                    Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
+                        return Ok(None);
+                    }
+                    Err(e) => return Err(e),
+                }
             }
             Err(e) if e.kind() == io::ErrorKind::WouldBlock
                    || e.kind() == io::ErrorKind::TimedOut => {
@@ -98,6 +104,12 @@ pub fn unregister(
 // "REGOK 1 ip port" -> Ok(Some((ip, port))) existing peer
 fn parse_regok(response: &str) -> io::Result<Option<(String, u16)>> {
     let parts: Vec<&str> = response.split_whitespace().collect();
+    if response.contains("ERROR 2") {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "Already registered",
+        ));
+    }
 
     if parts.is_empty() || parts[0] != "REGOK" {
         return Err(io::Error::new(

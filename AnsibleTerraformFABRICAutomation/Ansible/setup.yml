@@ -4,20 +4,7 @@
     - name: Wait for apt lock to be released
       shell: while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done
       timeout: 120
-
-    - name: Kill any stuck apt processes
-      shell: |
-        systemctl stop unattended-upgrades 2>/dev/null || true
-        systemctl disable unattended-upgrades 2>/dev/null || true
-        killall apt apt-get unattended-upgrades 2>/dev/null || true
-        kill -9 $(fuser /var/lib/apt/lists/lock 2>/dev/null) 2>/dev/null || true
-        kill -9 $(fuser /var/lib/dpkg/lock-frontend 2>/dev/null) 2>/dev/null || true
-        rm -f /var/lib/dpkg/lock-frontend
-        rm -f /var/lib/dpkg/lock
-        rm -f /var/cache/apt/archives/lock
-        rm -f /var/lib/apt/lists/lock
-        dpkg --configure -a
-      ignore_errors: yes
+      
     - name: Update apt cache
       apt:
         update_cache: yes
@@ -41,7 +28,7 @@
       become: no
       ignore_errors: yes
       
-    #this will never work on FABRIC since nodes dont' have outbound internet access
+    #this will never work on FABRIC since nodes dont' have outbound internet access (but may work on other machines) 
     # - name: Install Rust
     #   shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     #   become: no
@@ -61,4 +48,4 @@
 
     - name: Pause to let background apt processes finish
       pause:
-        seconds: 30
+        seconds: 5

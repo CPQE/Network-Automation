@@ -1,6 +1,149 @@
 # P2P File Sharing System
 
-Rust implementation of a centralized P2P file sharing system using a ring topology. Peers register with a bootstrap server for initial discovery, maintain successor and predecessor links in a ring, and can query and download files from other peers.
+Rust implementation of a centralized P2P file sharing system using a ring topology.
+
+---
+
+## Demo Test Procedure
+
+This section shows the exact steps to demonstrate all required functionality with 1 bootstrap server and 4 peer nodes.
+
+### Setup — run these on every node first
+
+```
+sudo ip link set enp7s0 up
+python3 generate_files.py
+```
+
+Assign addresses (one per node):
+```
+# Bootstrap node
+sudo ip addr add fd00::1/64 dev enp7s0
+
+# Client 1
+sudo ip addr add fd00::2/64 dev enp7s0
+
+# Client 2
+sudo ip addr add fd00::3/64 dev enp7s0
+
+# Client 3
+sudo ip addr add fd00::4/64 dev enp7s0
+
+# Client 4
+sudo ip addr add fd00::5/64 dev enp7s0
+```
+
+### Step 1 — Start bootstrap server (fd00::1 node)
+
+```
+python3 bootstrap.py
+```
+
+Note the port it prints, e.g. `Bootstrap server listening on ip: fd00::1, Port: 54321`
+
+### Step 2 — Join peers in order
+
+Each command goes in a separate SSH session. Wait for each peer to print "Joined network successfully" before starting the next one.
+
+```
+# Client 1 (fd00::2)
+./target/release/peer fd00::2 enp7s0 5000 fd00::1 <bootstrap_port>
+
+# Client 2 (fd00::3)
+./target/release/peer fd00::3 enp7s0 5001 fd00::1 <bootstrap_port>
+
+# Client 3 (fd00::4)
+./target/release/peer fd00::4 enp7s0 5002 fd00::1 <bootstrap_port>
+
+# Client 4 (fd00::5)
+./target/release/peer fd00::5 enp7s0 5003 fd00::1 <bootstrap_port>
+```
+
+After all four peers join, run `display` on each and confirm the ring is correct:
+```
+Peer fd00::2 — successor: fd00::3, predecessor: fd00::5
+Peer fd00::3 — successor: fd00::4, predecessor: fd00::2
+Peer fd00::4 — successor: fd00::5, predecessor: fd00::3
+Peer fd00::5 — successor: fd00::2, predecessor: fd00::4
+```
+
+### Step 3 — Check what files each peer has
+
+Run `display` on each peer and note the filenames in `./own`. You need a filename that exists on Client 4 (fd00::5) but not on Client 1 (fd00::2), and a filename that exists on Client 2 (fd00::3) but not on Client 3 (fd00::4).
+
+### Step 4 — Client 1 queries a file from Client 4
+
+On Client 1 (fd00::2):
+```
+> query 5 <filename_from_client4>
+```
+
+Expected output on Client 1:
+```
+[Query] Sending query for '<filename>' to successor fd00::3:5001
+[Transfer] FILE_FOUND, downloading...
+[Transfer] Downloaded '<filename>' saved to ./own
+```
+
+Confirm the file appeared:
+```
+> display
+```
+
+The file should now appear in Client 1's `./own` list.
+
+### Step 5 — Client 3 queries a file from Client 2
+
+On Client 3 (fd00::4):
+```
+> query 5 <filename_from_client2>
+```
+
+Expected output on Client 3:
+```
+[Query] Sending query for '<filename>' to successor fd00::5:5003
+[Transfer] FILE_FOUND, downloading...
+[Transfer] Downloaded '<filename>' saved to ./own
+```
+
+Confirm the file appeared in Client 3's `./own`.
+
+### Step 6 — Client 4 leaves the network
+
+On Client 4 (fd00::5):
+```
+> leave
+```
+
+Expected output:
+```
+Notified successor and predecessor of departure
+Unregistered from bootstrap
+Goodbye.
+```
+
+After Client 4 leaves, run `display` on Client 1 and Client 3 to confirm the ring repaired itself:
+```
+Peer fd00::2 — successor: fd00::3, predecessor: fd00::4
+Peer fd00::4 — successor: fd00::2, predecessor: fd00::3
+```
+
+### Step 7 — Client 1 queries Client 4's file again (should fail)
+
+On Client 1 (fd00::2):
+```
+> query 5 <filename_that_was_only_on_client4>
+```
+
+Expected output — query circulates the ring and finds no one with the file:
+```
+[Query] Sending query for '<filename>' to successor fd00::3:5001
+[Query] Hop count reached 0, dropping query for '<filename>'
+```
+
+No FILE_FOUND is received and no download occurs, confirming Client 4 has left the network and its files are no longer reachable.
+
+---
 
 ## Architecture
 
@@ -9,7 +152,7 @@ Bootstrap Server (Python/UDP) — peer discovery only
         ↓
 Peer Node (Rust) — UDP for ring messages, TCP for file transfers
         ↓
-Ring: Peer A <-> Peer B <-> Peer C <-> Peer A
+Ring: fd00::2 <-> fd00::3 <-> fd00::4 <-> fd00::5 <-> fd00::2
 ```
 
 Each peer runs three concurrent components:
@@ -73,35 +216,7 @@ src/
 └── cli.rs         - User prompt loop
 ```
 
-## Running Locally
-
-You need at least 3 terminals.
-
-**Terminal 1 — Bootstrap server:**
-```
-python3 bootstrap.py
-```
-Note the port it prints — you will need it for the peers.
-
-**Terminal 2 — Generate files and start Peer A:**
-```
-python3 generate_files.py
-cargo run --release -- 127.0.0.1 lo 5000 127.0.0.1 <bootstrap_port>
-```
-
-**Terminal 3 — Generate files and start Peer B:**
-```
-python3 generate_files.py
-cargo run --release -- 127.0.0.1 lo 5001 127.0.0.1 <bootstrap_port>
-```
-
-**Terminal 4 — Generate files and start Peer C:**
-```
-python3 generate_files.py
-cargo run --release -- 127.0.0.1 lo 5002 127.0.0.1 <bootstrap_port>
-```
-
-## Running on FABRIC
+## FABRIC Setup
 
 **On all nodes — install dependencies:**
 ```
@@ -109,21 +224,6 @@ sudo apt install build-essential python3-pip
 pip3 install netifaces
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
-```
-
-**Assign experiment interface addresses:**
-```
-# Node 1 (bootstrap + Peer A)
-sudo ip link set enp7s0 up
-sudo ip addr add fd00::1/64 dev enp7s0
-
-# Node 2 (Peer B)
-sudo ip link set enp7s0 up
-sudo ip addr add fd00::2/64 dev enp7s0
-
-# Node 3 (Peer C)
-sudo ip link set enp7s0 up
-sudo ip addr add fd00::3/64 dev enp7s0
 ```
 
 **SCP project to each node:**
@@ -141,67 +241,13 @@ cargo build --release
 python3 generate_files.py
 ```
 
-**Start bootstrap on one node:**
-```
-python3 bootstrap.py
-```
-Note the port printed in the output.
-
-**Start peers on each node:**
-```
-# Node 1 (fd00::1)
-./target/release/peer fd00::1 enp7s0 5000 fd00::1 <bootstrap_port>
-
-# Node 2 (fd00::2)
-./target/release/peer fd00::2 enp7s0 5001 fd00::1 <bootstrap_port>
-
-# Node 3 (fd00::3)
-./target/release/peer fd00::3 enp7s0 5002 fd00::1 <bootstrap_port>
-```
-
 ## CLI Commands
-
-Once a peer is running, the following commands are available:
 
 ```
 query <hop_count> <filename>   Query the ring for a file
 display                        Show own IP/port, successor, predecessor, and files in ./own
 leave                          Unregister from bootstrap and exit cleanly
 ```
-
-Example session:
-```
-> display
-=== Peer State ===
-  Own:         fd00::1%enp7s0:5000
-  Successor:   fd00::2%enp7s0:5001
-  Predecessor: fd00::3%enp7s0:5002
-==================
-Files in ./own:
-  network_peer_server1.txt
-  data_packet_server1.txt
-
-> query 3 network_peer_server2.txt
-[Query] Sending query for 'network_peer_server2.txt' to successor fd00::2:5001
-[Transfer] FILE_FOUND, downloading...
-[Transfer] Downloaded 'network_peer_server2.txt' saved to ./own
-
-> leave
-Notified successor and predecessor of departure
-Unregistered from bootstrap
-Goodbye.
-```
-
-## Verification
-
-**Peer join:** After each peer joins run `display` and confirm successor and predecessor are correct per the ring order.
-
-**File query:** Query for a file that exists on another peer. Confirm it appears in `./own` after download:
-```
-ls ./own
-```
-
-**Peer leave:** After a peer leaves run `display` on remaining peers and confirm their successor and predecessor updated correctly to skip the departed peer.
 
 ## Challenges
 
