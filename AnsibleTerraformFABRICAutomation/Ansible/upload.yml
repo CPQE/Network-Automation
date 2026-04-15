@@ -1,0 +1,46 @@
+- hosts: fabric_nodes
+  tasks:
+    - name: Upload Lab zip file
+      copy:
+        src: "{{ lab_zip }}"
+        dest: "/home/ubuntu/{{ lab_dir }}.zip"
+      register: upload_output
+    - name: Show upload output
+      debug:
+        msg: "{{ upload_output }}"
+
+    - name: Upload rustup-init.sh
+      copy:
+        src: "{{ rustup_init }}"
+        dest: /home/ubuntu/rustup-init.sh
+        mode: '0755'
+      register: rustup_upload_output
+    - name: Show rustup upload output
+      debug:
+        msg: "{{ rustup_upload_output }}"
+
+    - name: Unzip Lab
+      command: unzip -o "/home/ubuntu/{{ lab_dir }}.zip" -d /home/ubuntu
+      register: unzip_output
+    - name: Show unzip output
+      debug:
+        msg: "{{ unzip_output.stdout }}"
+
+    - name: Install Rust from local installer
+      shell: /home/ubuntu/rustup-init.sh -y
+      become: no
+      environment:
+        HOME: /home/ubuntu
+        RUSTUP_HOME: /home/ubuntu/.rustup
+        CARGO_HOME: /home/ubuntu/.cargo
+      register: rust_output
+    - name: Show Rust install output
+      debug:
+        msg: "{{ rust_output.stdout }}"
+
+    - name: Add cargo to PATH
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'source $HOME/.cargo/env'
+        state: present
+      become: no

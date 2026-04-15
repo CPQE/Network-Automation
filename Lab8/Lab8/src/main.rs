@@ -80,6 +80,7 @@ fn main() {
     });
 
     // Run CLI on main thread
+    println!("Starting CLI...");
     cli::run_cli(
         Arc::clone(&state),
         &own_addr,

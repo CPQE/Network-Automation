@@ -6,7 +6,6 @@ import time
 
 # Format: (ip_with_interface, port)
 registered_peers = []
-
 INTERFACE = 'enp7s0'
 PORT = 0  # Use 0 to let OS assign an available port
 LOG_FILE = "log.txt"

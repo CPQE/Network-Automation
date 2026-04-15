@@ -1,0 +1,14 @@
+- hosts: fabric_nodes
+  tasks:
+    - name: Build Lab
+      shell: cd "/home/ubuntu/{{ lab_dir }}" && /home/ubuntu/.cargo/bin/cargo build
+      register: build_output
+      environment:
+        HOME: /home/ubuntu
+        RUSTUP_HOME: /home/ubuntu/.rustup
+        CARGO_HOME: /home/ubuntu/.cargo
+      async: 600
+      poll: 30
+    - name: Show build output
+      debug:
+        msg: "{{ build_output.stdout }}"
