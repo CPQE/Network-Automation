@@ -36,7 +36,7 @@ fn main() {
         own_port,
     )));
 
-    match bootstrap::register(&own_addr, own_port, &bootstrap_ip, bootstrap_port) {
+    match bootstrap::register(&own_addr, own_port, &bootstrap_ip, bootstrap_port, &own_ip, &interface) {
         Ok(Some((existing_ip, existing_port))) => {
             println!("Got existing peer {}:{}, joining ring...", existing_ip, existing_port);
             peer::join_ring(Arc::clone(&state), &existing_ip, existing_port)

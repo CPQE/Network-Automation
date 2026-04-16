@@ -8,14 +8,14 @@ const MAX_RETRIES: u32 = 3;
 // Registers this peer with the bootstrap server.
 // Returns Ok(Some((ip, port))) if an existing peer was returned,
 // Ok(None) if this is the first peer, or an error.
-pub fn register(
-    own_addr: &str,
-    own_port: u16,
-    bootstrap_ip: &str,
-    bootstrap_port: u16,
-) -> io::Result<Option<(String, u16)>> {
-    let socket = UdpSocket::bind("[::]:0")?;
+pub fn register(own_addr: &str, own_port: u16, bootstrap_ip: &str, bootstrap_port: u16, own_ip: &str, interface: &str) -> io::Result<Option<(String, u16)>> {
+    let bind_addr = format!("[{}%{}]:0", own_ip, interface); 
     socket.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)))?;
+    let socket = UdpSocket::bind(&bind_addr).unwrap_or_else(|_| {
+        UdpSocket::bind(format!("[{}]:0", own_ip)).expect("Failed to bind bootstrap socket")
+    });
+    socket.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)))?;
+
 
     let bootstrap_addr = format!("[{}]:{}", bootstrap_ip, bootstrap_port);
     let message = format!("REG {} {}", own_addr, own_port);
@@ -46,7 +46,6 @@ pub fn register(
             Err(e) => return Err(e),
         }
     }
-
     Err(io::Error::new(
         io::ErrorKind::TimedOut,
         "Bootstrap did not respond after max retries",
@@ -54,12 +53,7 @@ pub fn register(
 }
 
 // Unregisters this peer from the bootstrap server on leave.
-pub fn unregister(
-    own_addr: &str,
-    own_port: u16,
-    bootstrap_ip: &str,
-    bootstrap_port: u16,
-) -> io::Result<()> {
+pub fn unregister(own_addr: &str, own_port: u16, bootstrap_ip: &str, bootstrap_port: u16) -> io::Result<()> {
     let socket = UdpSocket::bind("[::]:0")?;
     socket.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)))?;
 
