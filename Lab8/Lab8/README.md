@@ -47,16 +47,16 @@ Each command goes in a separate SSH session. Wait for each peer to print "Joined
 
 ```
 # Client 1 (fd00::2)
-./target/release/peer fd00::2 enp7s0 5000 fd00::1 <bootstrap_port>
+./target/debug/Lab8 fd00::2 enps7s0 5000 fd00::1 <bootstrap_port> 
 
 # Client 2 (fd00::3)
-./target/release/peer fd00::3 enp7s0 5001 fd00::1 <bootstrap_port>
+./target/debug/Lab8 fd00::3 enps7s0 5002 fd00::1 <bootstrap_port> 
 
 # Client 3 (fd00::4)
-./target/release/peer fd00::4 enp7s0 5002 fd00::1 <bootstrap_port>
+./targetdebug/Lab8  fd00::4 enp7s0 5002 fd00::1 <bootstrap_port>
 
 # Client 4 (fd00::5)
-./target/release/peer fd00::5 enp7s0 5003 fd00::1 <bootstrap_port>
+./target/debug/Lab8  fd00::5 enp7s0 5003 fd00::1 <bootstrap_port>
 ```
 
 After all four peers join, run `display` on each and confirm the ring is correct:
@@ -194,7 +194,7 @@ source $HOME/.cargo/env
 
 Build:
 ```
-cargo build --release
+cargo build 
 ```
 
 Bootstrap server requires Python with netifaces:
