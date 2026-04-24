@@ -1,0 +1,22 @@
+
+1. ping (linux)
+in this one I pinged the FABRIC peer0 server from the bootstrap server in Lab8. 
+Every ping succeeded with 0% loss, probably since the machines are in the same subnet due to them being directly connected through 
+the same virtual switch. 
+
+2. pathping (windows)
+pinged my own statically assigned private ip address on my pc. pathping shows every hop it takes to get to its destination the time for each step,
+including statistics like the RTT(Round trip time, time it takes for the ping to go and come back). This has essentially the same behavior 
+as tracert but its more verbose. 
+
+3. netstat (Linux)
+For me I always use this command to just see which applications are using what port and L4 protocol. In Windows, it'll display 'udp'
+or 'tcp' which is more clear, linux instead seems to display 'DGRAM' or 'STREAM'. It shows the connection status, flags, 
+and path to the process (since everything in linux is pretty much a file, a process has a 'file descriptor' in Linux). 
+
+4. nslookup (Linux)
+This does a DNS recursive query to get the ipv4/ipv6 address for the given domain name. If the closest DNS server doesn't have the domain
+in its database (A/AAAA record) then it'll do an interative query to get it. I ran this to get the ip of github.com
+
+5. host (Linux)
+This one essentially does the same as nslookup but also gives email servers if applicable. 

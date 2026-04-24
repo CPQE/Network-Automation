@@ -1,0 +1,6 @@
+1. ipconfig (Windows)
+2. getmac (Windows)
+3. arp (Windows)
+4. route (Linux)
+5. ethtool  (Linux)
+    

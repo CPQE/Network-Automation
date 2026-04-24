@@ -1,0 +1,14 @@
+1. ssh (Linux)
+Here I connected from my base terminal in FABRIC's Jupyterlab interface to provisioned node peer2. To do this I had to pass in the location of 
+my bastion key, ssh_config file, and the name of the server and management IP I wanted to connect to. Notice that the terminal changes from 
+fabric@summer: to ubuntu@peer2 after the login; I'm in a new shell. I also had to generate cryptographic asymmetric keys and put them in 
+FABRIC before this could work. 
+
+2. telnet (Windows)
+As the insecure version of ssh, this was dangerous to use as I did it in a public library on public wifi. I had to enable 
+optionalfeatures telnet in windows to make this work, and in a terminal I connected to this site called 'telehack' that simply 
+displays an old-school terminal environment. 
+
+3. ftp (Windows)
+This one was difficult but I managed to find a public ftp server here: https://www.sftp.net/public-online-ftp-servers
+I connected to test.rebex.net, listed the files, and downloaded a readme.txt file, which I've shared a screenshot of. 
