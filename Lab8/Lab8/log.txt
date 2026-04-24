@@ -1,0 +1,29 @@
+[2026-04-24 12:36:53] Could not determine IPv6 address for interface enp7s0.
+[2026-04-24 12:38:15] Could not determine IPv6 address for interface l0.
+[2026-04-24 12:38:45] Bootstrap server listening on ip: fd00::5, interface: lo, Port: 46126 (UDP)
+[2026-04-24 12:40:12] Received from ('fd00::2', 54973, 0, 0): REG fd00::2%lo 5000
+[2026-04-24 12:40:12] Sent: REGOK 0
+[2026-04-24 12:40:12] Current peers: fd00::2%lo:5000
+[2026-04-24 12:41:24] Received from ('fd00::3', 60789, 0, 0): REG fd00::3%lo 5001
+[2026-04-24 12:41:24] Sent: REGOK 1 fd00::2%lo 5000
+[2026-04-24 12:41:24] Current peers: fd00::2%lo:5000, fd00::3%lo:5001
+[2026-04-24 12:41:58] Received from ('fd00::4', 33154, 0, 0): REG fd00::4%lo 5001
+[2026-04-24 12:41:58] Sent: REGOK 1 fd00::2%lo 5000
+[2026-04-24 12:41:58] Current peers: fd00::2%lo:5000, fd00::3%lo:5001, fd00::4%lo:5001
+[2026-04-24 12:43:17] Bootstrap server listening on ip: fd00::5, interface: lo, Port: 46126 (UDP)
+[2026-04-24 12:47:10] Received from ('fd00::2', 44781, 0, 0): REG fd00::2%lo 5000
+[2026-04-24 12:47:10] Sent: REGOK 0
+[2026-04-24 12:47:10] Current peers: fd00::2%lo:5000
+[2026-04-24 12:47:15] Received from ('fd00::3', 40201, 0, 0): REG fd00::3%lo 5001
+[2026-04-24 12:47:15] Sent: REGOK 1 fd00::2%lo 5000
+[2026-04-24 12:47:15] Current peers: fd00::2%lo:5000, fd00::3%lo:5001
+[2026-04-24 12:47:18] Received from ('fd00::4', 49471, 0, 0): REG fd00::4%lo 5001
+[2026-04-24 12:47:18] Sent: REGOK 1 fd00::3%lo 5001
+[2026-04-24 12:47:18] Current peers: fd00::2%lo:5000, fd00::3%lo:5001, fd00::4%lo:5001
+[2026-04-24 13:05:09] Bootstrap server listening on ip: fd00::5, interface: lo, Port: 46126 (UDP)
+[2026-04-24 13:06:23] Received from ('fd00::2', 39866, 0, 0): REG fd00::2%enps7s0 5000
+[2026-04-24 13:06:23] Sent: REGOK 0
+[2026-04-24 13:06:23] Current peers: fd00::2%enps7s0:5000
+[2026-04-24 13:10:56] Received from ('fd00::5', 53752, 0, 0): UNREG fd00::2%enps7s0 5000
+[2026-04-24 13:10:56] Sent: UNREGOK 0
+[2026-04-24 13:10:56] Current peers: <no peers>

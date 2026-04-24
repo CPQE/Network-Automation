@@ -2,7 +2,6 @@ import os
 import random
 import string
 import socket
-
 OWN_DIR = "./own"
 NUM_FILES = 5
 FILE_SIZE_RANGE = (100, 500)

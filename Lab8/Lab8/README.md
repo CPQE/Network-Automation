@@ -8,7 +8,7 @@ Rust implementation of a centralized P2P file sharing system using a ring topolo
 
 This section shows the exact steps to demonstrate all required functionality with 1 bootstrap server and 4 peer nodes.
 
-### Setup — run these on every node first
+### Setup — run these on every node first (completed already with ansible script)
 
 ```
 sudo ip link set enp7s0 up
@@ -226,14 +226,14 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 ```
 
-**SCP project to each node:**
+**SCP project to each node:** (handled by ansible)
 ```
 scp -F /home/fabric/work/fabric_config/ssh_config \
     -i /home/fabric/work/fabric_config/Desktop_Cyrus_Bastion_Key \
     ./Lab8.zip ubuntu@[<enp3s0_ipv6>]:~/
 ```
 
-**On each node — unzip and build:**
+**On each node — unzip and build:** (unzipping handled by ansible)
 ```
 unzip Lab8.zip
 cd Lab8

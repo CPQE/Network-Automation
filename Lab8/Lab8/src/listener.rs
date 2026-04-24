@@ -28,7 +28,7 @@ pub fn run_listener(
             Ok((n, src)) => {
                 let msg = String::from_utf8_lossy(&buf[..n]).trim().to_string();
                 println!("[Listener] From {}: {}", src, msg);
-                handle_message(Arc::clone(&state), &msg, &socket);
+                handle_message(Arc::clone(&state), &msg, &socket, src);
             }
             Err(e) => {
                 eprintln!("[Listener] recv error: {}", e);
@@ -42,28 +42,23 @@ fn handle_message(
     state: Arc<Mutex<PeerState>>,
     msg: &str,
     socket: &UdpSocket,
+    src: std::net::SocketAddr
 ) {
     let parts: Vec<&str> = msg.split_whitespace().collect();
     if parts.is_empty() {
         return;
     }
-
     match parts[0] {
         // Another peer is joining and wants our successor
-        "JOIN" => handle_join(state, &parts, socket),
-
+        "JOIN" => handle_join(state, &parts, socket, src),
         // Update our successor to the given peer
         "SET_SUCCESSOR" => handle_set_successor(state, &parts),
-
         // Update our predecessor to the given peer
         "SET_PREDECESSOR" => handle_set_predecessor(state, &parts),
-
         // Incoming file query — check own files or forward to successor
         "FILE_QUERY" => handle_file_query(state, &parts),
-
         // A peer found the file we were looking for — initiate download
         "FILE_FOUND" => handle_file_found(state, &parts),
-
         _ => {
             eprintln!("[Listener] Unknown message: {}", msg);
         }
@@ -77,12 +72,17 @@ fn handle_join(
     state: Arc<Mutex<PeerState>>,
     parts: &[&str],
     socket: &UdpSocket,
+    src: std::net::SocketAddr
 ) {
     // Format: JOIN ip%interface port
     if parts.len() < 3 {
         eprintln!("[Listener] Malformed JOIN: {:?}", parts);
         return;
     }
+    let (successor_addr, successor_port) = {
+        let s: std::sync::MutexGuard<'_, PeerState> = state.lock().unwrap();
+        (s.successor_addr(), s.successor_port)
+    };
 
     let joiner_addr = parts[1];
     let joiner_port: u16 = match parts[2].parse() {
@@ -93,15 +93,14 @@ fn handle_join(
         }
     };
 
-    let (successor_addr, successor_port) = {
-        let s = state.lock().unwrap();
-        (s.successor_addr(), s.successor_port)
-    };
-
     // Respond with our current successor so the joiner can slot in between us
     let response = format!("JOINOK {} {}", successor_addr, successor_port);
-    println!("[Listener] Sending JOINOK to {}:{}: {}", joiner_addr, joiner_port, response);
+    println!("[Listener] Sending JOINOK to {}: {}", src, response);
 
+    // Send back to actual source address of the packet, not constructed address
+    if let Err(e) = socket.send_to(response.as_bytes(), src) {
+        eprintln!("[Listener] Failed to send JOINOK: {}", e);
+    }
     // Parse clean IP for sending
     let joiner_ip_clean = joiner_addr.split('%').next().unwrap_or(joiner_addr);
     if let Err(e) = send_message(joiner_ip_clean, joiner_port, &response) {

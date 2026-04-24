@@ -10,13 +10,10 @@ const MAX_RETRIES: u32 = 3;
 // Ok(None) if this is the first peer, or an error.
 pub fn register(own_addr: &str, own_port: u16, bootstrap_ip: &str, bootstrap_port: u16, own_ip: &str, interface: &str) -> io::Result<Option<(String, u16)>> {
     let bind_addr = format!("[{}%{}]:0", own_ip, interface); 
-    socket.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)))?;
-    let socket = UdpSocket::bind(&bind_addr).unwrap_or_else(|_| {
-        UdpSocket::bind(format!("[{}]:0", own_ip)).expect("Failed to bind bootstrap socket")
+    let socket =  UdpSocket::bind(&bind_addr).unwrap_or_else(|_|{
+        UdpSocket::bind(format!("[{}]:0", own_ip)).expect("Failed to bind to bootstrap socket")
     });
     socket.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)))?;
-
-
     let bootstrap_addr = format!("[{}]:{}", bootstrap_ip, bootstrap_port);
     let message = format!("REG {} {}", own_addr, own_port);
 
