@@ -1,0 +1,4 @@
+From reading the options on the man page of nc, I saw a couple that caught my eye: -D allows debugging on the socket, and -i allows 
+sleeping for intervals between lines of text received. The first is useful for more information and -i is good bc sometimes
+if you're trying to get data from a website it throttles or rejects requests if it thinks you are going too fast (rate limiting);
+I ran into this issue when webscraping sites. To solve that I'd add in delays so I think -i could do something similarly useful. 

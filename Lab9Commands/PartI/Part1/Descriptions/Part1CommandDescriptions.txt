@@ -1,0 +1,19 @@
+1. ipconfig (ran on Windows)
+For each wired and wireless adapter on my computer, shows the media state, link local IPv6 address, IPv4 address and netmask, 
+and default gateway. Running with the /all command would give MAC addresses and DNS/DHCP information. 
+
+2. getmac (ran on Windows, heavily censored)
+The getmac command shows the mac addresses of each of my interfaces. These are sensitive so I won't share them. In linux they can be obtained with "ifconfig -a  | grep ether"
+and the result when I ran that in a provisioned linux node was something like: 
+
+ether fa:16:2e:00:00:0b  txqueuelen 1000  (Ethernet)
+ether 0a:1e:88:00:00:00  txqueuelen 1000  (Ethernet)
+
+3. arp -a (ran on Windows)
+This gives the ARP table for the PC. This means it'll show what MAC Addresses are associated with what MAC addresses the computer has learned on the network through Address Resolution Protocol, a necessary process to learn next-hop MAC addresses in order to reach distant hosts not directly connected to my computer. For me it showed these static configurations on an Ethernet interface from a lab I was doing recently (uncensored) and those learned on my wifi interface (censored). 
+
+4. route (ran on Linux)
+This when ran alone is the routing table. It shows how to reach a certain network out of a particular interface. On windows, the equivalent 'route PRINT' will also show the next hop IP, so I'm not sure whey on linux it is different. It's also possible to add static routes in this table, as I've done in a previous assignment by specifying the destination subnet and netmask, the interface and/or the next hop address. 
+
+5. ethtool (ran on Linux)
+Shows the status and information of phsyical information like duplex, speed, autonegotiation status, and other hardware-based information. I belive the command also let's you change some of these settings too. 

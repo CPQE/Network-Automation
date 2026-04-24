@@ -1,0 +1,4 @@
+This was difficult to do since on Windows WSL doesn't have fully functioning access and the commands given were somewhat ill-formed. 
+I found this site called the Hurrican Electric IPv6 tunnel broker(https://tunnelbroker.net/) that could give some sweepable addresses for this part
+to use with Windows-based nmap. However the sweep took way too long so instead I just installed nmap on FABRIC and ping swept the 
+private range fd00::/8 I had set up on my nodes, and dumped info for peers 0 and 1 from bootstrap. 
